@@ -1,5 +1,6 @@
 package Chess.demo.Rules;
 
+import Chess.demo.ModelsandDTO.GameState;
 import Chess.demo.ModelsandDTO.Move;
 import Chess.demo.ModelsandDTO.PieceColor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,15 +9,14 @@ import org.springframework.stereotype.Component;
 @Component("r")
 public class RookValidator implements MoveValidator{
 
-    private  boolean whiteLeftRookMoved = false;
-    private  boolean whiteRightRookMoved = false;
-    private  boolean blackLeftRookMoved = false;
-    private  boolean blackRightRookMoved = false;
 
     private final BoardUtils boardUtils;
+    private final GameState gameState;
     @Autowired
-    public  RookValidator(BoardUtils boardUtils){
+    public  RookValidator(BoardUtils boardUtils,
+                          GameState gameState){
         this.boardUtils = boardUtils;
+        this.gameState = gameState;
     }
 
     @Override
@@ -60,19 +60,19 @@ public class RookValidator implements MoveValidator{
 
     private void updateRookMoved(int x, int y, PieceColor color) {
         if (color == PieceColor.White) {
-            if (x == 7 && y == 0) whiteLeftRookMoved = true;
-            if (x == 7 && y == 7) whiteRightRookMoved = true;
+            if (x == 7 && y == 0) gameState.setWhiteQueenRookMoved(true);
+            if (x == 7 && y == 7) gameState.setWhiteKingRookMoved(true);
         } else {
-            if (x == 0 && y == 0) blackLeftRookMoved = true;
-            if (x == 0 && y == 7) blackRightRookMoved = true;
+            if (x == 0 && y == 0) gameState.setBlackQueenRookMoved(true);
+            if (x == 0 && y == 7) gameState.setBlackKingRookMoved(true);
         }
     }
 
     public boolean hasRookMoved(int x , int y){
-        if (x == 7 && y == 0) return whiteLeftRookMoved;
-        if (x == 7 && y == 7) return whiteRightRookMoved;
-        if (x == 0 && y == 0) return blackLeftRookMoved;
-        if (x == 0 && y == 7) return blackRightRookMoved;
+        if (x == 7 && y == 0) return gameState.isWhiteQueenRookMoved();
+        if (x == 7 && y == 7) return gameState.isWhiteKingRookMoved();
+        if (x == 0 && y == 0) return gameState.isBlackQueenRookMoved();
+        if (x == 0 && y == 7) return gameState.isBlackKingRookMoved();
         return true;
     }
 }

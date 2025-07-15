@@ -4,7 +4,7 @@ import ChessBoard from "./ChessBoard.jsx";
 import Button from "./Button.jsx";
 import { Alert } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
-import { AnimatePresence, hasWarned, motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 const Play = () => {
   const resetRef = useRef(null);

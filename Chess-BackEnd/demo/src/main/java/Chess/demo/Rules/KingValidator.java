@@ -1,5 +1,6 @@
 package Chess.demo.Rules;
 
+import Chess.demo.ModelsandDTO.GameState;
 import Chess.demo.ModelsandDTO.Move;
 import Chess.demo.ModelsandDTO.PieceColor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,17 +11,16 @@ public class KingValidator implements MoveValidator {
 
     private final BoardUtils boardUtils;
     private final CastlingValidator castlingValidator;
-
+    private final GameState gameState;
     @Autowired
-    public KingValidator(BoardUtils boardUtils, CastlingValidator castlingValidator) {
+    public KingValidator(BoardUtils boardUtils,
+                         CastlingValidator castlingValidator,
+                         GameState gameState) {
 
         this.boardUtils = boardUtils;
         this.castlingValidator = castlingValidator;
+        this.gameState = gameState;
     }
-    private boolean whiteCastled = false;
-    private boolean blackCastled = false;
-    private boolean whiteKingHasMoved = false;
-    private boolean blackKingHasMoved = false;
 
     @Override
     public boolean isValid(Move move) {
@@ -37,9 +37,9 @@ public class KingValidator implements MoveValidator {
         char pieceAtTo = boardUtils.getPiece(toX, toY);
         if(fromX == toX && Math.abs(fromY-toY) == 2){
 
-            if(color == PieceColor.White ? !whiteCastled : !blackCastled && castlingValidator.isCastling(fromX , fromY, toY , color,whiteKingHasMoved,blackKingHasMoved)){
-                if(color == PieceColor.White)whiteCastled = true;
-                else blackCastled = true;
+            if(color == PieceColor.White ? !gameState.isWhiteCastled() : !gameState.isBlackCastled() && castlingValidator.isCastling(fromX , fromY, toY , color)){
+                if(color == PieceColor.White)gameState.setWhiteCastled(true);
+                else gameState.setBlackCastled(true);
                 return true;
             }
         }
@@ -50,8 +50,8 @@ public class KingValidator implements MoveValidator {
         int dy = Math.abs(toY - fromY);
 
         if(dx <= 1 && dy <= 1){
-            if(color == PieceColor.White)whiteKingHasMoved = true;
-            else blackKingHasMoved = true;
+            if(color == PieceColor.White)gameState.setWhiteKingMoved(true);
+            else gameState.setBlackKingMoved(true);
             return true;
         }
         return false;

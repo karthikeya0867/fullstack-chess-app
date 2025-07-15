@@ -1,5 +1,6 @@
 package Chess.demo.Rules;
 
+import Chess.demo.ModelsandDTO.GameState;
 import Chess.demo.ModelsandDTO.Move;
 import Chess.demo.ModelsandDTO.PieceColor;
 import Chess.demo.ModelsandDTO.PieceType;
@@ -14,19 +15,22 @@ public class CastlingValidator {
     private final GameThreatAnalyzer threatAnalyzer;
     private final BoardUtils boardUtils;
     private final RookValidator rookValidator;
+    private final GameState gameState;
     @Autowired
     public CastlingValidator(BoardUtils boardUtils ,
                              RookValidator rookValidator,
-                             @Lazy GameThreatAnalyzer threatAnalyzer){
+                             @Lazy GameThreatAnalyzer threatAnalyzer,
+                             GameState gameState){
         this.boardUtils = boardUtils;
         this.rookValidator = rookValidator;
         this.threatAnalyzer = threatAnalyzer;
+        this.gameState = gameState;
     }
 
-    public boolean isCastling(int fromX, int fromY, int toY, PieceColor color , boolean whiteKingHasMoved , boolean blackKingHasMoved) {
+    public boolean isCastling(int fromX, int fromY, int toY, PieceColor color) {
 
-        if (color == PieceColor.White && whiteKingHasMoved) return false;
-        if (color == PieceColor.Black && blackKingHasMoved) return false;
+        if (color == PieceColor.White && gameState.isWhiteKingMoved()) return false;
+        if (color == PieceColor.Black && gameState.isBlackKingMoved()) return false;
 
         if (toY > fromY) {
             int rookY = 7;

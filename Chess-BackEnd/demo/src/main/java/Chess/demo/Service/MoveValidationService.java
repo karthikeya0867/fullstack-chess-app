@@ -1,51 +1,32 @@
 package Chess.demo.Service;
 
 import Chess.demo.Exceptions.InvalidChessException;
-import Chess.demo.ModelsandDTO.Move;
-import Chess.demo.ModelsandDTO.MoveValidationResult;
-import Chess.demo.ModelsandDTO.PieceColor;
-import  Chess.demo.ModelsandDTO.PieceType;
+import Chess.demo.ModelsandDTO.*;
 import Chess.demo.Rules.*;
-import lombok.Setter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-
-import java.util.HashMap;
-import java.util.Map;
-
-
-
 @Service
 public class MoveValidationService {
-    private final Map<PieceType, MoveValidator> validatorMap = new HashMap<>();
     private final BoardUtils boardUtils;
     private final GameThreatAnalyzer threatAnalyzer;
+    private final GameState gameState;
+    private final ValidationFinder validationFinder;
 
-    @Setter
-    private  boolean whiteTurn = true;
 
     @Autowired
     public MoveValidationService(
-            RookValidator rookValidator,
-            BishopValidator bishopValidator,
-            PawnValidator pawnValidator,
-            KingValidator kingValidator,
-            KnightValidator knightValidator,
-            QueenValidator queenValidator,
             BoardUtils boardUtils,
-            GameThreatAnalyzer threatAnalyzer
+            GameThreatAnalyzer threatAnalyzer,
+            GameState gameState,
+            ValidationFinder validationFinder
     ) {
-        validatorMap.put(PieceType.ROOK, rookValidator);
-        validatorMap.put(PieceType.BISHOP, bishopValidator);
-        validatorMap.put(PieceType.PAWN, pawnValidator);
-        validatorMap.put(PieceType.KING, kingValidator);
-        validatorMap.put(PieceType.KNIGHT, knightValidator);
-        validatorMap.put(PieceType.QUEEN, queenValidator);
-
         this.boardUtils = boardUtils;
         this.threatAnalyzer = threatAnalyzer;
+        this.gameState = gameState;
+        this.validationFinder = validationFinder;
     }
+
 
     public MoveValidationResult validateMove(Move move) {
         PieceColor color = move.getPieceColor();
@@ -56,11 +37,11 @@ public class MoveValidationService {
             throw new InvalidChessException("Invalid color: " + color);
         }
 
-        if ((whiteTurn && !(color == PieceColor.White)) || (!whiteTurn && (color == PieceColor.White))) {
+        if ((gameState.isWhiteTurn() && !(color == PieceColor.White)) || (!gameState.isWhiteTurn() && (color == PieceColor.White))) {
             throw new InvalidChessException("Not " + color + "'s turn");
         }
 
-        MoveValidator validator = validatorMap.get(move.getPieceType());
+        MoveValidator validator = validationFinder.getValidatorFor(move.getPieceType().getSymbol());
         if (validator == null) {
             throw new InvalidChessException("Unsupported piece type: " + move.getPieceType());
         }
@@ -82,7 +63,7 @@ public class MoveValidationService {
             return new MoveValidationResult(message,null,null,null,false,false);
         }
 
-        whiteTurn = !whiteTurn;
+        gameState.toggleTurn();
         PieceColor inCheck = threatAnalyzer.isKingInCheck(opponentColor) ? opponentColor : null;
         PieceColor checkmate = threatAnalyzer.isCheckMate(opponentColor) ? opponentColor : null;
         PieceColor winner = (checkmate == null) ? null : color;

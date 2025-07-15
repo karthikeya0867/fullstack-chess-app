@@ -94,7 +94,7 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
 
   const pieceColorMapping = (piece) => {
     console.log("piece: ", piece);
-    return piece[0] === "w" ? "WHITE" : "BLACK";
+    return piece[0] === "w" ? "White" : "Black";
   };
   class MoveFormat {
     constructor(from, to, pieceColor, pieceType) {
@@ -131,7 +131,7 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
   useImperativeHandle(ref, () => ({
     resetBoard: async () => {
       try {
-        const res = await fetch(`${API_CONTEXT_PATH}/reset-board`);
+        const res = await fetch(`${API_CONTEXT_PATH}/reset-game`);
         const data = await res.json();
         setBoardState(data);
       } catch (err) {
@@ -238,6 +238,7 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
         return;
       }
       const [row, col] = posToIndex([toCol, toRow]);
+      const targetCol = col;
 
       if (selectedPiece) {
         const [fromCol, fromRow] = selectedPiece;
@@ -249,30 +250,21 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
           pieceMapping(boardState[frow][fcol])
         );
         const isValid = await apiValidation(move);
-        // if (isValid.message === "Success") {
-        //   setBoardState((prev) => {
-        //     const pieceAtFrom = prev[frow][fcol];
-        //     if (!pieceAtFrom) return prev;
 
-        //     const newBoard = [...prev];
-        //     newBoard[frow] = [...newBoard[frow]];
-        //     newBoard[frow][fcol] = null;
-        //     newBoard[row] = [...newBoard[row]];
-        //     newBoard[row][col] = pieceAtFrom;
-        //     return newBoard;
-        //   });
-        // }
         if (isValid.message === "Success") {
           setBoardState((prev) => {
-            const newBoard = [...prev.map((row) => [...row])]; // deep clone
+            const pieceAtFrom = prev[frow][fcol];
+            if (!pieceAtFrom) return prev;
 
-            // Move king
-            newBoard[row][col] = null;
-            newBoard[targetRow][targetCol] = piece;
+            const newBoard = [...prev];
+            newBoard[frow] = [...newBoard[frow]];
+            newBoard[frow][fcol] = null;
+            newBoard[row] = [...newBoard[row]];
+            newBoard[row][col] = pieceAtFrom;
 
             // Detect castling: if king moved two squares horizontally
             if (
-              pieceMapping(piece) === "KING" &&
+              pieceMapping(pieceAtFrom) === "KING" &&
               Math.abs(targetCol - col) === 2
             ) {
               if (targetCol > col) {
@@ -370,6 +362,7 @@ const Square = memo(
         {piece && (
           <motion.img
             src={`./src/assets/pieces-basic-svg/${piece}.svg`}
+            layoutId={position}
             alt={piece}
             className="cursor-grab active:cursor-grabbing w-full h-full z-20 touch-none select-none"
             drag

@@ -16,7 +16,8 @@ public class ValidationFinder {
         this.validatorMap = new HashMap<>();
         for(Map.Entry<String,MoveValidator> entry : validators.entrySet()){
             String key = entry.getKey();
-            if(key.length() == 1 && "prnbqk".contains(key)){
+            String allPieces = "prnbqk";
+            if(key.length() == 1 && allPieces.contains(key)){
                 validatorMap.put(key.charAt(0),entry.getValue());
             }
         }

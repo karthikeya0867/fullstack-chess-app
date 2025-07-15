@@ -1,6 +1,7 @@
 package Chess.demo.ModelsandDTO;
 
 import Chess.demo.Rules.BoardUtils;
+import jakarta.annotation.PostConstruct;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -11,7 +12,6 @@ import java.util.List;
 import java.util.UUID;
 
 @Component
-@SessionScope
 @Data
 public class GameState {
 
@@ -19,6 +19,7 @@ public class GameState {
     @Autowired
     public GameState(BoardUtils boardUtils){
         this.boardUtils = boardUtils;
+        reset();
     }
     private UUID gameId;
     private char[][] board;
@@ -26,6 +27,8 @@ public class GameState {
     private List<Move.MoveHistory> moveHistory;
 
     //castling
+    private boolean whiteCastled;
+    private boolean blackCastled;
     private boolean whiteKingMoved;
     private boolean blackKingMoved;
     private boolean whiteKingRookMoved;
@@ -45,8 +48,13 @@ public class GameState {
         this.isWhiteTurn = true;
         this.moveHistory = new ArrayList<>();
 
+        this.whiteCastled = this.blackCastled = false;
         this.whiteKingMoved = this.blackKingMoved = false;
         this.whiteKingRookMoved = this.whiteQueenRookMoved = false;
         this.blackKingRookMoved = this.blackQueenRookMoved = false;
+    }
+
+    public void toggleTurn(){
+        isWhiteTurn = !isWhiteTurn;
     }
 }

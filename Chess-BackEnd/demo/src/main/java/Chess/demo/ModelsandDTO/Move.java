@@ -26,7 +26,7 @@ public class Move {
 
     @NotNull
     private PieceType pieceType;
-    @NotBlank
+    @NotNull
     private PieceColor pieceColor;
 
     public record MoveHistory(String from, String to) {}
