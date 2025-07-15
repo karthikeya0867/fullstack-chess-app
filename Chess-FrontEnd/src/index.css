@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Courier New', Courier, monospace;
+}
+.wel-text {
+    text-shadow: 2px 2px 5px rgba(209, 202, 202, 0.5);
+}
+input:active {
+  @apply translate-y-[2px] shadow-[0_2px_5px_rgba(255,255,255,0.3)];
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 1000px transparent inset;
+    -webkit-text-fill-color: #fff ;
+    background-color: transparent ;
+    transition: background-color 9999s ease-in-out 0s;
+}
+input {
+   @apply p-3 mt-1 text-white border-0 border-b-4 border-[#666] rounded-md text-base bg-transparent transition-colors duration-300;
+}
+input:focus {
+    @apply border-white outline-none shadow-[0_2px_5px_rgba(255,255,255,0.3)];
+}
