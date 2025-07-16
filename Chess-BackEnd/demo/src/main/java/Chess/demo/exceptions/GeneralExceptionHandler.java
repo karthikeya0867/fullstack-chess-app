@@ -1,6 +1,6 @@
-package Chess.demo.Exceptions;
+package Chess.demo.exceptions;
 
-import Chess.demo.ModelsandDTO.APIResponse;
+import Chess.demo.modelsandDTO.APIResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

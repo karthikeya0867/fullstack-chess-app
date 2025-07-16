@@ -1,4 +1,4 @@
-package Chess.demo.ModelsandDTO;
+package Chess.demo.modelsandDTO;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;

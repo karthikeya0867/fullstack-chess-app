@@ -1,6 +1,6 @@
-package Chess.demo.Rules;
+package Chess.demo.rules;
 
-import Chess.demo.ModelsandDTO.Move;
+import Chess.demo.modelsandDTO.Move;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -1,8 +1,8 @@
-package Chess.demo.Rules;
+package Chess.demo.rules;
 
-import Chess.demo.ModelsandDTO.GameState;
-import Chess.demo.ModelsandDTO.Move;
-import Chess.demo.ModelsandDTO.PieceColor;
+import Chess.demo.modelsandDTO.GameState;
+import Chess.demo.modelsandDTO.Move;
+import Chess.demo.modelsandDTO.PieceColor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 

@@ -1,8 +1,8 @@
-package Chess.demo.Service;
+package Chess.demo.service;
 
-import Chess.demo.Exceptions.InvalidChessException;
-import Chess.demo.ModelsandDTO.*;
-import Chess.demo.Rules.*;
+import Chess.demo.exceptions.InvalidChessException;
+import Chess.demo.modelsandDTO.*;
+import Chess.demo.rules.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 

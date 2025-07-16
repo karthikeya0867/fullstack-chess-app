@@ -1,4 +1,4 @@
-package Chess.demo.Exceptions;
+package Chess.demo.exceptions;
 
 public class InvalidChessException extends RuntimeException
 {

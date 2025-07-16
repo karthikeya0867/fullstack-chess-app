@@ -1,4 +1,4 @@
-package Chess.demo.ModelsandDTO;
+package Chess.demo.modelsandDTO;
 
 public enum PieceColor {
     White,Black

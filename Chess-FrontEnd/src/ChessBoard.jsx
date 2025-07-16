@@ -9,6 +9,7 @@ import {
   forwardRef,
 } from "react";
 import { motion } from "framer-motion";
+import fetchData from "./fetchData";
 import { API_CONTEXT_PATH } from "./App";
 
 const ChessBoard = forwardRef(({ setAlert }, ref) => {
@@ -42,30 +43,12 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
         "b-knight",
         "b-rook",
       ],
-      [
-        "b-pawn",
-        "b-pawn",
-        "b-pawn",
-        "b-pawn",
-        "b-pawn",
-        "b-pawn",
-        "b-pawn",
-        "b-pawn",
-      ],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [null, null, null, null, null, null, null, null],
-      [
-        "w-pawn",
-        "w-pawn",
-        "w-pawn",
-        "w-pawn",
-        "w-pawn",
-        "w-pawn",
-        "w-pawn",
-        "w-pawn",
-      ],
+      Array(8).fill("b-pawn"),
+      Array(8).fill(null),
+      Array(8).fill(null),
+      Array(8).fill(null),
+      Array(8).fill(null),
+      Array(8).fill("w-pawn"),
       [
         "w-rook",
         "w-knight",
@@ -80,63 +63,24 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
     []
   );
 
-  useEffect(() => {
-    fetch(`${API_CONTEXT_PATH}/get-board`)
-      .then((response) => response.json())
-      .then((data) => setBoardState(data))
-      .catch((error) => console.log(error));
-  }, []);
-
-  const pieceMapping = (piece) => {
-    console.log("piece: ", piece);
-    return piece.split("-")[1].toUpperCase();
-  };
-
-  const pieceColorMapping = (piece) => {
-    console.log("piece: ", piece);
-    return piece[0] === "w" ? "White" : "Black";
-  };
-  class MoveFormat {
-    constructor(from, to, pieceColor, pieceType) {
-      this.from = from;
-      this.to = to;
-      this.pieceType = pieceType;
-      this.pieceColor = pieceColor;
-    }
-  }
-
-  const apiValidation = async (move) => {
-    try {
-      const response = await fetch(`${API_CONTEXT_PATH}/validate-move`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(move),
-      });
-
-      const data = await response.json();
-      console.log(data);
-      console.log(data.message);
-
-      return data;
-    } catch (error) {
-      console.log(error);
-    }
-  };
-
   const [boardState, setBoardState] = useState(defaultBoard);
   const [selectedPiece, setSelectedPiece] = useState(null);
 
+  // Fetch initial board state from API
+  useEffect(() => {
+    (async () => {
+      const data = await fetchData(`${API_CONTEXT_PATH}/get-board`);
+      if (!data.error) setBoardState(data);
+      else console.error(data.error);
+    })();
+  }, []);
+
+  // Reset board exposed via ref
   useImperativeHandle(ref, () => ({
     resetBoard: async () => {
-      try {
-        const res = await fetch(`${API_CONTEXT_PATH}/reset-game`);
-        const data = await res.json();
-        setBoardState(data);
-      } catch (err) {
-        console.log(err);
-      }
+      const data = await fetchData(`${API_CONTEXT_PATH}/reset-game`);
+      if (!data.error) setBoardState(data);
+      else console.error(data.error);
     },
   }));
 
@@ -144,86 +88,93 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
     setSelectedPiece(null);
   }, [boardState]);
 
-  const posToIndex = ([colChar, rowChar]) => {
-    const row = 8 - parseInt(rowChar); // 8 - 6 , ....
-    const col = colChar.charCodeAt(0) - "a".charCodeAt(0); // 'h' - 'a' , ...
-    return [row, col];
+  // --- Helpers ---
+
+  const posToIndex = ([colChar, rowChar]) => [
+    8 - parseInt(rowChar),
+    colChar.charCodeAt(0) - "a".charCodeAt(0),
+  ];
+
+  const indexToPos = (row, col) =>
+    String.fromCharCode("a".charCodeAt(0) + col) + (8 - row);
+
+  const getPieceType = (piece) => piece?.split("-")[1].toUpperCase();
+
+  const getPieceColor = (piece) => (piece?.startsWith("w") ? "White" : "Black");
+
+  // Validate move via API
+  const validateMove = async (move) => {
+    const response = await fetchData(`${API_CONTEXT_PATH}/validate-move`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(move),
+    });
+    return response;
   };
-  const indexToPos = (targetRow, targetCol) => {
-    const rowChar = 8 - targetRow;
-    const colChar = String.fromCharCode("a".charCodeAt(0) + targetCol);
-    return colChar + rowChar;
+
+  const updateBoardState = (prev, fromRow, fromCol, toRow, toCol, piece) => {
+    const newBoard = prev.slice();
+
+    newBoard[fromRow] = [...prev[fromRow]];
+    newBoard[toRow] = [...prev[toRow]];
+
+    newBoard[fromRow][fromCol] = null;
+    newBoard[toRow][toCol] = piece;
+
+    if (getPieceType(piece) === "KING" && Math.abs(toCol - fromCol) === 2) {
+      if (toCol > fromCol) {
+        newBoard[toRow][7] = null;
+        newBoard[toRow][toCol - 1] = `${piece[0]}-rook`;
+      } else {
+        newBoard[toRow][0] = null;
+        newBoard[toRow][toCol + 1] = `${piece[0]}-rook`;
+      }
+    }
+
+    return newBoard;
   };
+
+  // --- Event Handlers ---
 
   const handleDrop = useCallback(async (e, from) => {
     if (!from || !draggedPieceRef.current) {
-      console.warn("Invalid drop : missing from or piece");
+      console.warn("Invalid drop: missing from or piece");
       return;
     }
-    console.log("from: ", from);
-    const boardCoord = boardRef.current.getBoundingClientRect(); //this method gets all coordinates/distances wrt to board from viewport to top , left and width of board ...etc
-    const squareWidth = boardCoord.width / 8;
 
-    //clientX and Y return X,Y coords of touchpoint wrt to viewport
-    const x = e.clientX - boardCoord.left; //distance from left edge of board to cursor
-    const y = e.clientY - boardCoord.top; //distance from top edge of board to cursor
+    const boardRect = boardRef.current.getBoundingClientRect();
+    const squareWidth = boardRect.width / 8;
+
+    const x = e.clientX - boardRect.left;
+    const y = e.clientY - boardRect.top;
 
     const targetRow = Math.floor(y / squareWidth);
     const targetCol = Math.floor(x / squareWidth);
 
-    if (targetCol < 0 || targetCol > 7 || targetRow < 0 || targetRow > 7)
+    if (targetRow < 0 || targetRow > 7 || targetCol < 0 || targetCol > 7)
       return;
-    const [row, col] = posToIndex([from[0], from[1]]);
+
+    const [fromRow, fromCol] = posToIndex(from);
     const piece = draggedPieceRef.current;
-    console.log("fromRow: ", row, "fromCol: ", col);
-    console.log(boardState[row][col]);
 
-    const move = new MoveFormat(
-      indexToPos(row, col),
-      indexToPos(targetRow, targetCol),
-      pieceColorMapping(piece),
-      pieceMapping(piece)
-    );
-    const isValid = await apiValidation(move);
-    // if (isValid.message === "Success") {
-    //   setBoardState((prev) => {
-    //     const newBoard = [...prev];
-    //     newBoard[row] = [...newBoard[row]];
-    //     newBoard[row][col] = null;
-    //     newBoard[targetRow] = [...newBoard[targetRow]];
-    //     newBoard[targetRow][targetCol] = piece;
-    //     return newBoard;
-    //   });
-    // }
-    if (isValid.message === "Success") {
-      setBoardState((prev) => {
-        const newBoard = [...prev.map((row) => [...row])]; // deep clone
+    const move = {
+      from: indexToPos(fromRow, fromCol),
+      to: indexToPos(targetRow, targetCol),
+      pieceColor: getPieceColor(piece),
+      pieceType: getPieceType(piece),
+    };
 
-        // Move king
-        newBoard[row][col] = null;
-        newBoard[targetRow][targetCol] = piece;
+    const validation = await validateMove(move);
 
-        // Detect castling: if king moved two squares horizontally
-        if (pieceMapping(piece) === "KING" && Math.abs(targetCol - col) === 2) {
-          if (targetCol > col) {
-            // King-side castling
-            newBoard[row][7] = null;
-            newBoard[row][targetCol - 1] = `${piece[0]}-rook`;
-          } else {
-            // Queen-side castling
-            newBoard[row][0] = null;
-            newBoard[row][targetCol + 1] = `${piece[0]}-rook`;
-          }
-        }
-
-        return newBoard;
-      });
+    if (validation.message === "Success") {
+      setBoardState((prev) =>
+        updateBoardState(prev, fromRow, fromCol, targetRow, targetCol, piece)
+      );
     } else {
-      setAlert({
-        message: isValid.message,
-      });
+      setAlert({ message: validation.message });
     }
-    draggingRef.current = null; // reset dragging state after drop
+
+    draggingRef.current = null;
     draggedPieceRef.current = null;
   }, []);
 
@@ -231,69 +182,52 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
     async (e) => {
       if (draggingRef.current) return;
 
-      const clickedPos = e.currentTarget.dataset.position; //currentTarget refers to DOM element to which listener is actually attached so even the click on img bubbles up to div
-      const [toCol, toRow] = clickedPos;
+      const clickedPos = e.currentTarget.dataset.position;
       if (selectedPiece === clickedPos) {
         setSelectedPiece(null);
         return;
       }
-      const [row, col] = posToIndex([toCol, toRow]);
-      const targetCol = col;
 
-      if (selectedPiece) {
-        const [fromCol, fromRow] = selectedPiece;
-        const [frow, fcol] = posToIndex([fromCol, fromRow]);
-        const move = new MoveFormat(
-          selectedPiece,
-          clickedPos,
-          pieceColorMapping(boardState[frow][fcol]),
-          pieceMapping(boardState[frow][fcol])
-        );
-        const isValid = await apiValidation(move);
+      const [toColChar, toRowChar] = clickedPos;
+      const [toRow, toCol] = posToIndex([toColChar, toRowChar]);
 
-        if (isValid.message === "Success") {
-          setBoardState((prev) => {
-            const pieceAtFrom = prev[frow][fcol];
-            if (!pieceAtFrom) return prev;
-
-            const newBoard = [...prev];
-            newBoard[frow] = [...newBoard[frow]];
-            newBoard[frow][fcol] = null;
-            newBoard[row] = [...newBoard[row]];
-            newBoard[row][col] = pieceAtFrom;
-
-            // Detect castling: if king moved two squares horizontally
-            if (
-              pieceMapping(pieceAtFrom) === "KING" &&
-              Math.abs(targetCol - col) === 2
-            ) {
-              if (targetCol > col) {
-                // King-side castling
-                newBoard[row][7] = null;
-                newBoard[row][targetCol - 1] = `${piece[0]}-rook`;
-              } else {
-                // Queen-side castling
-                newBoard[row][0] = null;
-                newBoard[row][targetCol + 1] = `${piece[0]}-rook`;
-              }
-            }
-
-            return newBoard;
-          });
-        } else {
-          setAlert({
-            message: isValid.message,
-          });
-        }
-      } else {
-        setSelectedPiece(clickedPos); // if no piece is selected before
+      if (!selectedPiece) {
+        setSelectedPiece(clickedPos);
+        return;
       }
+
+      const [fromColChar, fromRowChar] = selectedPiece;
+      const [fromRow, fromCol] = posToIndex([fromColChar, fromRowChar]);
+      const piece = boardState[fromRow][fromCol];
+
+      if (!piece) {
+        setSelectedPiece(null);
+        return;
+      }
+
+      const move = {
+        from: selectedPiece,
+        to: clickedPos,
+        pieceColor: getPieceColor(piece),
+        pieceType: getPieceType(piece),
+      };
+
+      const validation = await validateMove(move);
+
+      if (validation.message === "Success") {
+        setBoardState((prev) =>
+          updateBoardState(prev, fromRow, fromCol, toRow, toCol, piece)
+        );
+      } else {
+        setAlert({ message: validation.message });
+      }
+
+      setSelectedPiece(null);
     },
     [selectedPiece]
   );
 
   const handleDragStart = useCallback((from, piece) => {
-    console.log("dragging from: ", from);
     draggingRef.current = from;
     draggedPieceRef.current = piece;
   }, []);
@@ -305,6 +239,8 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
     },
     [handleDrop]
   );
+
+  // --- Render ---
 
   return (
     <div
@@ -337,6 +273,7 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
 
 export default ChessBoard;
 
+// Memoized Square component for performance
 const Square = memo(
   ({
     position,
@@ -347,34 +284,33 @@ const Square = memo(
     onDragStart,
     onDragEnd,
     dragBoundary,
-  }) => {
-    return (
-      <div
-        data-position={position}
-        onClick={onClick}
-        className={`relative aspect-square w-full h-full flex items-center justify-center 
-          ${isWhite ? "bg-[#ebecd0]" : "bg-[#739552]"}`}
-        draggable={false}
-      >
-        {isSelected && piece && (
-          <div className="absolute inset-0 bg-[#b9ca43] opacity-60 z-10 pointer-events-none"></div>
-        )}
-        {piece && (
-          <motion.img
-            src={`./src/assets/pieces-basic-svg/${piece}.svg`}
-            layoutId={position}
-            alt={piece}
-            className="cursor-grab active:cursor-grabbing w-full h-full z-20 touch-none select-none"
-            drag
-            dragConstraints={dragBoundary}
-            dragElastic={false}
-            dragMomentum={false}
-            onDragStart={() => onDragStart(position, piece)}
-            onDragEnd={onDragEnd}
-            dragSnapToOrigin
-          />
-        )}
-      </div>
-    );
-  }
+  }) => (
+    <div
+      data-position={position}
+      onClick={onClick}
+      className={`relative aspect-square w-full h-full flex items-center justify-center ${
+        isWhite ? "bg-[#ebecd0]" : "bg-[#739552]"
+      }`}
+      draggable={false}
+    >
+      {isSelected && piece && (
+        <div className="absolute inset-0 bg-[#b9ca43] opacity-60 z-10 pointer-events-none" />
+      )}
+      {piece && (
+        <motion.img
+          src={`./src/assets/pieces-basic-svg/${piece}.svg`}
+          layoutId={position}
+          alt={piece}
+          className="cursor-grab active:cursor-grabbing w-full h-full z-20 touch-none select-none"
+          drag
+          dragConstraints={dragBoundary}
+          dragElastic={false}
+          dragMomentum={false}
+          onDragStart={() => onDragStart(position, piece)}
+          onDragEnd={onDragEnd}
+          dragSnapToOrigin
+        />
+      )}
+    </div>
+  )
 );

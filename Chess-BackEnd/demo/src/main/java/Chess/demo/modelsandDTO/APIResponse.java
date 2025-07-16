@@ -1,4 +1,4 @@
-package Chess.demo.ModelsandDTO;
+package Chess.demo.modelsandDTO;
 
 
 import lombok.Data;

@@ -1,9 +1,9 @@
-package Chess.demo.Rules;
+package Chess.demo.rules;
 
-import Chess.demo.ModelsandDTO.GameState;
-import Chess.demo.ModelsandDTO.Move;
-import Chess.demo.ModelsandDTO.PieceColor;
-import Chess.demo.ModelsandDTO.PieceType;
+import Chess.demo.modelsandDTO.GameState;
+import Chess.demo.modelsandDTO.Move;
+import Chess.demo.modelsandDTO.PieceColor;
+import Chess.demo.modelsandDTO.PieceType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -19,13 +19,15 @@ public class CastlingValidator {
     @Autowired
     public CastlingValidator(BoardUtils boardUtils ,
                              RookValidator rookValidator,
-                             @Lazy GameThreatAnalyzer threatAnalyzer,
-                             GameState gameState){
+                             GameState gameState,
+                             @Lazy GameThreatAnalyzer threatAnalyzer){
         this.boardUtils = boardUtils;
         this.rookValidator = rookValidator;
-        this.threatAnalyzer = threatAnalyzer;
         this.gameState = gameState;
+        this.threatAnalyzer = threatAnalyzer;
     }
+
+
 
     public boolean isCastling(int fromX, int fromY, int toY, PieceColor color) {
 

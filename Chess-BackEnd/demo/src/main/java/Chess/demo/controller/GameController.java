@@ -1,11 +1,11 @@
-package Chess.demo.Controller;
+package Chess.demo.controller;
 
-import Chess.demo.ModelsandDTO.APIResponse;
-import Chess.demo.ModelsandDTO.GameState;
-import Chess.demo.ModelsandDTO.Move;
-import Chess.demo.ModelsandDTO.MoveValidationResult;
-import Chess.demo.Rules.BoardUtils;
-import Chess.demo.Service.MoveValidationService;
+import Chess.demo.modelsandDTO.APIResponse;
+import Chess.demo.modelsandDTO.GameState;
+import Chess.demo.modelsandDTO.Move;
+import Chess.demo.modelsandDTO.MoveValidationResult;
+import Chess.demo.rules.BoardUtils;
+import Chess.demo.service.MoveValidationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;

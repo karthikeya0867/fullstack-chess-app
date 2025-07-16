@@ -1,11 +1,9 @@
-package Chess.demo.ModelsandDTO;
+package Chess.demo.modelsandDTO;
 
-import Chess.demo.Rules.BoardUtils;
-import jakarta.annotation.PostConstruct;
+import Chess.demo.rules.BoardUtils;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.annotation.SessionScope;
 
 import java.util.ArrayList;
 import java.util.List;

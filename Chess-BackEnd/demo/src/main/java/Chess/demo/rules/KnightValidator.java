@@ -1,15 +1,17 @@
-package Chess.demo.Rules;
+package Chess.demo.rules;
 
-import Chess.demo.ModelsandDTO.Move;
-import Chess.demo.ModelsandDTO.PieceColor;
+import Chess.demo.modelsandDTO.Move;
+import Chess.demo.modelsandDTO.PieceColor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component("n")
 public class KnightValidator implements MoveValidator {
 
-    private final BoardUtils boardUtils;
+    private BoardUtils boardUtils;
 
-    public KnightValidator(BoardUtils boardUtils) {
+    @Autowired
+    private void setBoardUtils(BoardUtils boardUtils){
         this.boardUtils = boardUtils;
     }
 

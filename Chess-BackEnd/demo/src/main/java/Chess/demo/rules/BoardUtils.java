@@ -1,8 +1,8 @@
-package Chess.demo.Rules;
+package Chess.demo.rules;
 
-import Chess.demo.Exceptions.InvalidChessException;
-import Chess.demo.ModelsandDTO.Move;
-import Chess.demo.ModelsandDTO.PieceColor;
+import Chess.demo.exceptions.InvalidChessException;
+import Chess.demo.modelsandDTO.Move;
+import Chess.demo.modelsandDTO.PieceColor;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
