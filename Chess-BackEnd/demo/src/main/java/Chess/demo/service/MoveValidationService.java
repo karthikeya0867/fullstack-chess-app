@@ -72,4 +72,8 @@ public class MoveValidationService {
         message = "Success";
         return new MoveValidationResult(message,winner,inCheck,checkmate,stalemate,true);
     }
+
+    public void handlePromotion(PieceType piece) {
+
+    }
 }

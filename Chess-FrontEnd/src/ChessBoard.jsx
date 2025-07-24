@@ -9,8 +9,9 @@ import {
   forwardRef,
 } from "react";
 import { motion } from "framer-motion";
-import fetchData from "./fetchData";
+import * as utils from "./utils";
 import { API_CONTEXT_PATH } from "./App";
+import Button from "./Button";
 
 const ChessBoard = forwardRef(({ setAlert }, ref) => {
   const boardRef = useRef();
@@ -65,11 +66,12 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
 
   const [boardState, setBoardState] = useState(defaultBoard);
   const [selectedPiece, setSelectedPiece] = useState(null);
+  const [winner, setWinner] = useState(null);
 
   // Fetch initial board state from API
   useEffect(() => {
     (async () => {
-      const data = await fetchData(`${API_CONTEXT_PATH}/get-board`);
+      const data = await utils.fetchData(`${API_CONTEXT_PATH}/get-board`);
       if (!data.error) setBoardState(data);
       else console.error(data.error);
     })();
@@ -78,7 +80,7 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
   // Reset board exposed via ref
   useImperativeHandle(ref, () => ({
     resetBoard: async () => {
-      const data = await fetchData(`${API_CONTEXT_PATH}/reset-game`);
+      const data = await utils.fetchData(`${API_CONTEXT_PATH}/reset-game`);
       if (!data.error) setBoardState(data);
       else console.error(data.error);
     },
@@ -87,52 +89,6 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
   useEffect(() => {
     setSelectedPiece(null);
   }, [boardState]);
-
-  // --- Helpers ---
-
-  const posToIndex = ([colChar, rowChar]) => [
-    8 - parseInt(rowChar),
-    colChar.charCodeAt(0) - "a".charCodeAt(0),
-  ];
-
-  const indexToPos = (row, col) =>
-    String.fromCharCode("a".charCodeAt(0) + col) + (8 - row);
-
-  const getPieceType = (piece) => piece?.split("-")[1].toUpperCase();
-
-  const getPieceColor = (piece) => (piece?.startsWith("w") ? "White" : "Black");
-
-  // Validate move via API
-  const validateMove = async (move) => {
-    const response = await fetchData(`${API_CONTEXT_PATH}/validate-move`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(move),
-    });
-    return response;
-  };
-
-  const updateBoardState = (prev, fromRow, fromCol, toRow, toCol, piece) => {
-    const newBoard = prev.slice();
-
-    newBoard[fromRow] = [...prev[fromRow]];
-    newBoard[toRow] = [...prev[toRow]];
-
-    newBoard[fromRow][fromCol] = null;
-    newBoard[toRow][toCol] = piece;
-
-    if (getPieceType(piece) === "KING" && Math.abs(toCol - fromCol) === 2) {
-      if (toCol > fromCol) {
-        newBoard[toRow][7] = null;
-        newBoard[toRow][toCol - 1] = `${piece[0]}-rook`;
-      } else {
-        newBoard[toRow][0] = null;
-        newBoard[toRow][toCol + 1] = `${piece[0]}-rook`;
-      }
-    }
-
-    return newBoard;
-  };
 
   // --- Event Handlers ---
 
@@ -154,22 +110,32 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
     if (targetRow < 0 || targetRow > 7 || targetCol < 0 || targetCol > 7)
       return;
 
-    const [fromRow, fromCol] = posToIndex(from);
+    const [fromRow, fromCol] = utils.posToIndex(from);
     const piece = draggedPieceRef.current;
 
-    const move = {
-      from: indexToPos(fromRow, fromCol),
-      to: indexToPos(targetRow, targetCol),
-      pieceColor: getPieceColor(piece),
-      pieceType: getPieceType(piece),
-    };
+    const move = utils.buildMove(
+      utils.indexToPos(fromRow, fromCol),
+      utils.indexToPos(targetRow, targetCol),
+      piece
+    );
 
-    const validation = await validateMove(move);
+    if (move.from === move.to) return;
+
+    const validation = await utils.validateMove(move);
 
     if (validation.message === "Success") {
+      console.log(validation);
       setBoardState((prev) =>
-        updateBoardState(prev, fromRow, fromCol, targetRow, targetCol, piece)
+        utils.updateBoardState(
+          prev,
+          fromRow,
+          fromCol,
+          targetRow,
+          targetCol,
+          piece
+        )
       );
+      checkMateValidator(validation.data);
     } else {
       setAlert({ message: validation.message });
     }
@@ -189,7 +155,7 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
       }
 
       const [toColChar, toRowChar] = clickedPos;
-      const [toRow, toCol] = posToIndex([toColChar, toRowChar]);
+      const [toRow, toCol] = utils.posToIndex([toColChar, toRowChar]);
 
       if (!selectedPiece) {
         setSelectedPiece(clickedPos);
@@ -197,7 +163,7 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
       }
 
       const [fromColChar, fromRowChar] = selectedPiece;
-      const [fromRow, fromCol] = posToIndex([fromColChar, fromRowChar]);
+      const [fromRow, fromCol] = utils.posToIndex([fromColChar, fromRowChar]);
       const piece = boardState[fromRow][fromCol];
 
       if (!piece) {
@@ -205,19 +171,18 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
         return;
       }
 
-      const move = {
-        from: selectedPiece,
-        to: clickedPos,
-        pieceColor: getPieceColor(piece),
-        pieceType: getPieceType(piece),
-      };
+      const move = utils.buildMove(selectedPiece, clickedPos, piece);
 
-      const validation = await validateMove(move);
+      if (move.from === move.to) return;
+
+      const validation = await utils.validateMove(move);
 
       if (validation.message === "Success") {
+        console.log(validation);
         setBoardState((prev) =>
-          updateBoardState(prev, fromRow, fromCol, toRow, toCol, piece)
+          utils.updateBoardState(prev, fromRow, fromCol, toRow, toCol, piece)
         );
+        checkMateValidator(validation.data);
       } else {
         setAlert({ message: validation.message });
       }
@@ -240,6 +205,12 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
     [handleDrop]
   );
 
+  const checkMateValidator = (validation) => {
+    console.log(validation);
+    if (validation.isCheckmate != null) {
+      setWinner(validation.winner);
+    }
+  };
   // --- Render ---
 
   return (
@@ -247,6 +218,36 @@ const ChessBoard = forwardRef(({ setAlert }, ref) => {
       ref={boardRef}
       className="relative w-[90vw] max-w-[600px] aspect-square mt-2 ml-[10px] md:ml-4 grid grid-rows-8"
     >
+      {winner && (
+        <div className="absolute inset-0  flex items-center justify-center z-30">
+          <motion.div
+            className="flex justify-center items-center flex-col 
+  bg-[#1a1a1a]  text-[#cccccc] p-6 max-w-[500px] w-[55%] 
+  h-[60vh] max-h-[700px] rounded-lg shadow-xl shadow-black
+  border border-[#1a1a1a] z-40"
+            variants={{
+              initial: { opacity: 0, y: -100 },
+              animate: { opacity: 1, y: 0 },
+            }}
+            initial="initial"
+            animate="animate"
+          >
+            <h2 className="text-3xl font-bold mb-4">Game Over</h2>
+            <p className="text-xl font-semibold">{winner} wins!</p>
+
+            <Button
+              isButtonDark={false}
+              onClick={() => {
+                setWinner(null);
+                ref.current.resetBoard();
+              }}
+            >
+              Reset Game
+            </Button>
+          </motion.div>
+        </div>
+      )}
+
       {chessBoardPositions.map((row, rowIndex) => (
         <div key={rowIndex} className="grid grid-cols-8 w-full h-full">
           {row.map((cell, cellIndex) => {

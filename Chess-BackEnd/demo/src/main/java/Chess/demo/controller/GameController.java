@@ -1,9 +1,6 @@
 package Chess.demo.controller;
 
-import Chess.demo.modelsandDTO.APIResponse;
-import Chess.demo.modelsandDTO.GameState;
-import Chess.demo.modelsandDTO.Move;
-import Chess.demo.modelsandDTO.MoveValidationResult;
+import Chess.demo.modelsandDTO.*;
 import Chess.demo.rules.BoardUtils;
 import Chess.demo.service.MoveValidationService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -80,6 +77,11 @@ public class GameController {
     public String[][] resetGame(){
         gameState.reset();
         return getFrontendBoard();
+    }
+
+    @GetMapping("/promote-pawn/{Piece}")
+    public void promotePawn(@PathVariable PieceType Piece){
+        moveValidationService.handlePromotion(Piece);
     }
 
 }

@@ -37,7 +37,7 @@ public class KingValidator implements MoveValidator {
         char pieceAtTo = boardUtils.getPiece(toX, toY);
         if(fromX == toX && Math.abs(fromY-toY) == 2){
 
-            if(color == PieceColor.White ? !gameState.isWhiteCastled() : !gameState.isBlackCastled() && castlingValidator.isCastling(fromX , fromY, toY , color)){
+            if((color == PieceColor.White ? !gameState.isWhiteCastled() : !gameState.isBlackCastled()) && castlingValidator.isCastling(fromX , fromY, toY , color)){
                 if(color == PieceColor.White)gameState.setWhiteCastled(true);
                 else gameState.setBlackCastled(true);
                 return true;

@@ -23,31 +23,37 @@ const Navbar = () => {
   }, [isOpen]);
 
   useEffect(() => {
-  const handleClickOutside = (e) => {
-    if (isOpen && !e.target.closest(".backdrop-container") && !e.target.closest("button")) {
-      setIsOpen(false);
-    }
-  };
+    const handleClickOutside = (e) => {
+      if (
+        isOpen &&
+        !e.target.closest(".backdrop-container") &&
+        !e.target.closest("button")
+      ) {
+        setIsOpen(false);
+      }
+    };
 
-  const handleScroll = () => {
-    if (isOpen) setIsOpen(false);
-  };
+    const handleScroll = () => {
+      if (isOpen) setIsOpen(false);
+    };
 
-  document.addEventListener("click", handleClickOutside);
-  window.addEventListener("scroll", handleScroll);
+    document.addEventListener("click", handleClickOutside);
+    window.addEventListener("scroll", handleScroll);
 
-  return () => {
-    document.removeEventListener("click", handleClickOutside);
-    window.removeEventListener("scroll", handleScroll);
-  };
-}, [isOpen]);
-
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isOpen]);
 
   return (
     <header className="absolute top-0 left-0 w-full z-50 bg-transparent">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
         <div className="flex justify-between items-center h-16 relative">
-          <Link to="/" className="flex items-center space-x-2 text-2xl font-bold text-white">
+          <Link
+            to="/"
+            className="flex items-center space-x-2 text-2xl font-bold text-white"
+          >
             <img
               src="./src/assets/logo.png"
               alt="Chess Logo"
@@ -57,10 +63,15 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex space-x-6">
-            <Link to="/" className="text-white hover:text-blue-300">Home</Link>
-            <Link to="/play" className="text-white hover:text-blue-300">Play</Link>
-            <Link to="/login" className="text-white hover:text-blue-300">Login</Link>
-            <Link to="/about" className="text-white hover:text-blue-300">About</Link>
+            <Link to="/" className="text-white hover:text-blue-300">
+              Home
+            </Link>
+            <Link to="/play" className="text-white hover:text-blue-300">
+              Play
+            </Link>
+            <Link to="/login" className="text-white hover:text-blue-300">
+              Login
+            </Link>
           </div>
 
           <div ref={toggleRef} className="md:hidden z-50 relative">
@@ -96,7 +107,10 @@ const Navbar = () => {
                     whileHover={{ scale: 1.1 }}
                     className="text-white text-2xl font-semibold"
                   >
-                    <Link to={`/${item.text.toLowerCase()}`} onClick={() => setIsOpen(false)}>
+                    <Link
+                      to={`/${item.text.toLowerCase()}`}
+                      onClick={() => setIsOpen(false)}
+                    >
                       {item.text}
                     </Link>
                   </motion.li>
@@ -110,12 +124,7 @@ const Navbar = () => {
   );
 };
 
-const menuItems = [
-  { text: "Home" },
-  { text: "Play" },
-  { text: "Login" },
-  { text: "About" },
-];
+const menuItems = [{ text: "Home" }, { text: "Play" }, { text: "Login" }];
 
 const MenuToggle = ({ toggle, isOpen }) => (
   <motion.button
@@ -169,7 +178,7 @@ const backgroundVariants = {
     clipPath: [
       `circle(0px at ${x}px ${y}px)`,
       `circle(400px at ${x}px ${y}px)`,
-      `circle(2000px at ${x}px ${y}px)`
+      `circle(2000px at ${x}px ${y}px)`,
     ],
     transition: {
       duration: 0.8,
@@ -181,7 +190,7 @@ const backgroundVariants = {
     clipPath: [
       `circle(2000px at ${x}px ${y}px)`,
       `circle(400px at ${x}px ${y}px)`,
-      `circle(0px at ${x}px ${y}px)`
+      `circle(0px at ${x}px ${y}px)`,
     ],
     transition: {
       duration: 0.6,
@@ -191,21 +200,19 @@ const backgroundVariants = {
   }),
 };
 
-
- const menuVariants = {
-   open: {
-     opacity: 1,
-     transition: {
-       delayChildren: 0.3,
-       staggerChildren: 0.1,
-     },
-   },
-   closed: {
-     opacity: 0,
-     transition: { duration: 0.2 },
-   },
- };
-
+const menuVariants = {
+  open: {
+    opacity: 1,
+    transition: {
+      delayChildren: 0.3,
+      staggerChildren: 0.1,
+    },
+  },
+  closed: {
+    opacity: 0,
+    transition: { duration: 0.2 },
+  },
+};
 
 const itemVariants = {
   open: { opacity: 1, y: 0 },
