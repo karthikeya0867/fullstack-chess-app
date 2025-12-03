@@ -1,12 +1,20 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import * as motion from "motion/react-client";
+import { useAuth } from "./AuthContext"; // Import useAuth
+import { useDarkMode } from "./DarkModeContext"; // Import useDarkMode
+import LightModeIcon from '@mui/icons-material/LightMode'; // Import LightModeIcon
+import DarkModeIcon from '@mui/icons-material/DarkMode'; // Import DarkModeIcon
+
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const toggleRef = useRef(null);
   const [coords, setCoords] = useState({ x: 0, y: 0 });
   const [hasMounted, setHasMounted] = useState(false);
+  const { authToken, logout } = useAuth(); // Get auth token and logout function
+  const { isDarkMode, toggleDarkMode } = useDarkMode(); // Get dark mode state and toggle function
+  const navigate = useNavigate();
 
   useEffect(() => {
     requestAnimationFrame(() => setHasMounted(true));
@@ -46,6 +54,21 @@ const Navbar = () => {
     };
   }, [isOpen]);
 
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+    setIsOpen(false); // Close mobile menu on logout
+  };
+
+  const menuItems = [
+    { text: "Home", path: "/" },
+    { text: "Play", path: "/play" },
+  ];
+
+  if (!authToken) {
+    menuItems.push({ text: "Login", path: "/login" });
+  }
+
   return (
     <header className="absolute top-0 left-0 w-full z-50 bg-transparent">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
@@ -62,19 +85,26 @@ const Navbar = () => {
             <span>Chess.com</span>
           </Link>
 
-          <div className="hidden md:flex space-x-6">
-            <Link to="/" className="text-white hover:text-blue-300">
-              Home
-            </Link>
-            <Link to="/play" className="text-white hover:text-blue-300">
-              Play
-            </Link>
-            <Link to="/login" className="text-white hover:text-blue-300">
-              Login
-            </Link>
+          <div className="hidden md:flex space-x-6 items-center">
+            {menuItems.map((item, i) => (
+              <Link key={i} to={item.path} className="text-white hover:text-blue-300">
+                {item.text}
+              </Link>
+            ))}
+            {authToken && (
+              <button onClick={handleLogout} className="text-white hover:text-blue-300 bg-transparent border-none cursor-pointer">
+                Logout
+              </button>
+            )}
+            <button onClick={toggleDarkMode} className="text-white hover:text-blue-300 bg-transparent border-none cursor-pointer">
+                {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            </button>
           </div>
 
-          <div ref={toggleRef} className="md:hidden z-50 relative">
+          <div ref={toggleRef} className="md:hidden z-50 relative flex items-center gap-4">
+            <button onClick={toggleDarkMode} className="text-white hover:text-blue-300 bg-transparent border-none cursor-pointer">
+                {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            </button>
             <MenuToggle toggle={() => setIsOpen(!isOpen)} isOpen={isOpen} />
           </div>
         </div>
@@ -108,13 +138,24 @@ const Navbar = () => {
                     className="text-white text-2xl font-semibold"
                   >
                     <Link
-                      to={`/${item.text.toLowerCase()}`}
+                      to={item.path}
                       onClick={() => setIsOpen(false)}
                     >
                       {item.text}
                     </Link>
                   </motion.li>
                 ))}
+                {authToken && (
+                  <motion.li
+                    variants={itemVariants}
+                    whileHover={{ scale: 1.1 }}
+                    className="text-white text-2xl font-semibold"
+                  >
+                    <button onClick={handleLogout} className="text-white bg-transparent border-none cursor-pointer">
+                      Logout
+                    </button>
+                  </motion.li>
+                )}
               </motion.ul>
             </motion.div>
           </motion.div>

@@ -1,24 +1,24 @@
-import LandingPage from './LandingPage.jsx';
-import Auth from './AuthForm.jsx';
-import Play from './Play.jsx';
+import LandingPage from "./LandingPage";
+import Auth from "./AuthForm";
+import Play from "./Play";
 
 const routes = [
   {
-    path: '/login',
-    element: <Auth key="login" mode="login"/>,
+    path: "/login",
+    element: <Auth key="login" mode="login" />,
   },
   {
-    path: '/signup',
+    path: "/signup",
     element: <Auth key="signup" mode="signup" />,
   },
   {
-    path: '/',
+    path: "/",
     element: <LandingPage />,
   },
   {
-    path: '/play',
+    path: "/play",
     element: <Play />,
-  }
+  },
 ];
 
 export default routes;

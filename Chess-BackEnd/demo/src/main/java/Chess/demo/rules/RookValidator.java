@@ -6,6 +6,8 @@ import Chess.demo.modelsandDTO.PieceColor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+
 @Component("r")
 public class RookValidator implements MoveValidator{
 
@@ -39,6 +41,12 @@ public class RookValidator implements MoveValidator{
         }
         return false;
     }
+
+    @Override
+    public ArrayList<Integer[]> validMoves(int[] from, PieceColor color) {
+        return null;
+    }
+
     public boolean isPathClear(int fromX,int fromY , int toX , int toY){
 
         if(fromX == toX){

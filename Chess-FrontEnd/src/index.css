@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  body {
+    @apply bg-gray-100 text-gray-900;
+  }
+  body.dark {
+    @apply bg-gray-900 text-gray-100;
+  }
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -29,4 +38,8 @@ input {
 }
 input:focus {
     @apply border-white outline-none shadow-[0_2px_5px_rgba(255,255,255,0.3)];
+}
+
+.last-move-highlight {
+  background-color: rgba(255, 255, 0, 0.4) !important; /* Yellowish highlight */
 }

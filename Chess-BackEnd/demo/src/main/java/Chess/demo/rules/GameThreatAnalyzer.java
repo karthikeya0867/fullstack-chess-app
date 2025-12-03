@@ -1,67 +1,63 @@
 package Chess.demo.rules;
 
+import Chess.demo.modelsandDTO.GameState;
 import Chess.demo.modelsandDTO.Move;
 import Chess.demo.modelsandDTO.PieceColor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
 public class GameThreatAnalyzer {
 
-
     private final ValidationFinder validationFinder;
-    private final BoardUtils boardUtils;
-    @Autowired
-    public GameThreatAnalyzer(BoardUtils boardUtils,
-                              ValidationFinder validationFinder) {
-        this.boardUtils = boardUtils;
+    private final BoardUtils boardUtils = new BoardUtils();
+
+    public GameThreatAnalyzer(ValidationFinder validationFinder) {
         this.validationFinder = validationFinder;
     }
 
-
-    public boolean isKingInCheck(PieceColor color) {
-        int[] kingPos = boardUtils.findKing(color);
-        return isKingInCheck(color, kingPos);
-    }
-
-
-    public boolean isKingInCheck(PieceColor color , int[] kingPos) {
-        char[][] board = boardUtils.getBoard();
-
+    public boolean isSquareAttackedBy(int[] square, PieceColor attackerColor, GameState gameState) {
+        char[][] board = gameState.getBoard();
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
                 char piece = board[x][y];
-                if (boardUtils.isFriendlyPiece(piece, color) || piece == ' ') continue;
+                if (boardUtils.isFriendlyPiece(piece, attackerColor) || piece == ' ') continue;
 
                 Move pseudoMove = new Move();
                 pseudoMove.setFrom(boardUtils.toChessNotation(x, y));
-                pseudoMove.setTo(boardUtils.toChessNotation(kingPos[0], kingPos[1]));
-                pseudoMove.setPieceColor(boardUtils.oppositeColor(color));
+                pseudoMove.setTo(boardUtils.toChessNotation(square[0], square[1]));
+                pseudoMove.setPieceColor(attackerColor);
 
                 MoveValidator validator = validationFinder.getValidatorFor(piece);
-                if (validator.isValid(pseudoMove)) {
-                    return true; // King is under attack
+                if (validator.isValid(pseudoMove, gameState)) {
+                    return true;
                 }
             }
         }
-
         return false;
     }
 
-    public boolean isCheckMate(PieceColor color){
-        return (isKingInCheck(color) && !kingHasSafeSquare(color));
+    public boolean isKingInCheck(PieceColor color, GameState gameState) {
+        int[] kingPos = boardUtils.findKing(gameState.getBoard(), color);
+        return isSquareAttackedBy(kingPos, boardUtils.oppositeColor(color), gameState);
     }
 
-    public boolean isStaleMate(PieceColor color){
-        return (!isKingInCheck(color) && !playerHasLegalMove(color));
+    public boolean isKingInCheck(PieceColor color, int[] kingPos, GameState gameState) {
+        return isSquareAttackedBy(kingPos, boardUtils.oppositeColor(color), gameState);
     }
 
-    private boolean playerHasLegalMove(PieceColor color) {
-        char[][] board = boardUtils.getBoard();
+    public boolean isCheckMate(PieceColor color, GameState gameState) {
+        return isKingInCheck(color, gameState) && !kingHasSafeSquare(color, gameState) && !playerHasLegalMove(color, gameState);
+    }
 
+    public boolean isStaleMate(PieceColor color, GameState gameState) {
+        return (!isKingInCheck(color, gameState) && !playerHasLegalMove(color, gameState));
+    }
+
+    private boolean playerHasLegalMove(PieceColor color, GameState gameState) {
+        char[][] board = gameState.getBoard();
         for (int x = 0; x < 8; x++) {
             for (int y = 0; y < 8; y++) {
-                char piece = board[x][y];
+                char piece = boardUtils.getPiece(board, x, y);
 
                 if (boardUtils.isOpponentPiece(piece, color) || piece == ' ') continue;
 
@@ -78,13 +74,12 @@ public class GameThreatAnalyzer {
                         move.setTo(to);
                         move.setPieceColor(color);
 
-                        if (!validator.isValid(move)) continue;
+                        if (!validator.isValid(move, gameState)) continue;
 
-                        // Simulate move
-                        char captured = boardUtils.getPiece(i, j);
-                        boardUtils.makeMove(move);
-                        boolean kingSafe = !isKingInCheck(color);
-                        boardUtils.revertMove(move, captured);
+                        char captured = boardUtils.getPiece(board, i, j);
+                        boardUtils.makeMove(board, move);
+                        boolean kingSafe = !isKingInCheck(color, gameState);
+                        boardUtils.revertMove(board, move, captured);
 
                         if (kingSafe) return true;
                     }
@@ -95,9 +90,8 @@ public class GameThreatAnalyzer {
         return false;
     }
 
-
-    private boolean kingHasSafeSquare(PieceColor color) {
-        int[] kingPos = boardUtils.findKing(color);
+    private boolean kingHasSafeSquare(PieceColor color, GameState gameState) {
+        int[] kingPos = boardUtils.findKing(gameState.getBoard(), color);
         int x = kingPos[0], y = kingPos[1];
         String from = boardUtils.toChessNotation(x, y);
 
@@ -110,7 +104,7 @@ public class GameThreatAnalyzer {
 
                 if (!boardUtils.indexInBounds(newX, newY)) continue;
 
-                char target = boardUtils.getPiece(newX, newY);
+                char target = boardUtils.getPiece(gameState.getBoard(), newX, newY);
                 if (boardUtils.isFriendlyPiece(target, color)) continue;
 
                 Move move = new Move();
@@ -118,24 +112,19 @@ public class GameThreatAnalyzer {
                 move.setTo(boardUtils.toChessNotation(newX, newY));
                 move.setPieceColor(color);
 
-                // Save the piece at destination for revert
-                char captured = boardUtils.getPiece(newX, newY);
+                char captured = boardUtils.getPiece(gameState.getBoard(), newX, newY);
 
-                // Make temporary move
-                boardUtils.makeMove(move);
+                boardUtils.makeMove(gameState.getBoard(), move);
 
-                boolean stillInCheck = isKingInCheck(color, new int[]{newX, newY});
+                boolean stillInCheck = isKingInCheck(color, new int[]{newX, newY}, gameState);
 
-                // Revert the move
-                boardUtils.revertMove(move, captured);
+                boardUtils.revertMove(gameState.getBoard(), move, captured);
 
                 if (!stillInCheck) {
-                    return true; // Found at least one safe square
+                    return true;
                 }
             }
         }
-        return false; // No legal move that gets out of check
+        return false;
     }
-
-
 }

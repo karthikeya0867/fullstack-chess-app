@@ -1,9 +1,9 @@
 package Chess.demo.rules;
 
 import Chess.demo.exceptions.InvalidChessException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -11,14 +11,15 @@ import java.util.stream.Collectors;
 public class ValidationFinder {
 
     private final Map<Character,MoveValidator> validatorMap;
-    @Autowired
-    public ValidationFinder(Map<String,MoveValidator> validators){
-        this.validatorMap = validators.entrySet().stream()
-                .collect(Collectors.toMap(
-                        e -> e.getKey().charAt(0),
-                        Map.Entry::getValue
-                ));
 
+    public ValidationFinder(){
+        this.validatorMap = new HashMap<>();
+        validatorMap.put('p', new PawnValidator());
+        validatorMap.put('r', new RookValidator());
+        validatorMap.put('n', new KnightValidator());
+        validatorMap.put('b', new BishopValidator());
+        validatorMap.put('q', new QueenValidator());
+        validatorMap.put('k', new KingValidator());
     }
 
     public MoveValidator getValidatorFor(char piece) {
@@ -28,4 +29,3 @@ public class ValidationFinder {
         return validator;
     }
 }
-

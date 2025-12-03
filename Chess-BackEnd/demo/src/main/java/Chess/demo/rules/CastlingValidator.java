@@ -1,77 +1,60 @@
 package Chess.demo.rules;
 
 import Chess.demo.modelsandDTO.GameState;
-import Chess.demo.modelsandDTO.Move;
 import Chess.demo.modelsandDTO.PieceColor;
-import Chess.demo.modelsandDTO.PieceType;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CastlingValidator {
 
-
-    private final GameThreatAnalyzer threatAnalyzer;
-    private final BoardUtils boardUtils;
-    private final RookValidator rookValidator;
-    private final GameState gameState;
-    @Autowired
-    public CastlingValidator(BoardUtils boardUtils ,
-                             RookValidator rookValidator,
-                             GameState gameState,
-                             @Lazy GameThreatAnalyzer threatAnalyzer){
-        this.boardUtils = boardUtils;
-        this.rookValidator = rookValidator;
-        this.gameState = gameState;
-        this.threatAnalyzer = threatAnalyzer;
-    }
-
-
-
-    public boolean isCastling(int fromX, int fromY, int toY, PieceColor color) {
+    public boolean isCastling(int fromX, int fromY, int toY, PieceColor color, GameState gameState, ValidationFinder validationFinder) {
+        GameThreatAnalyzer threatAnalyzer = new GameThreatAnalyzer(validationFinder);
+        BoardUtils boardUtils = new BoardUtils();
 
         if (color == PieceColor.White && gameState.isWhiteKingMoved()) return false;
         if (color == PieceColor.Black && gameState.isBlackKingMoved()) return false;
 
-        if (toY > fromY) {
+        // Check if king is currently in check
+        if (threatAnalyzer.isKingInCheck(color, gameState)) return false;
+
+        if (toY > fromY) { // Kingside castling
             int rookY = 7;
-            char rook = boardUtils.getPiece(fromX, rookY);
-            boolean rookHasMoved = rookValidator.hasRookMoved(fromX, rookY);
+            char rook = boardUtils.getPiece(gameState.getBoard(), fromX, rookY);
+            
+            boolean rookHasMoved = (color == PieceColor.White) ? gameState.isWhiteKingRookMoved() : gameState.isBlackKingRookMoved();
+            if (rookHasMoved) return false;
 
-            if (color == PieceColor.White && (rook != 'R' || rookHasMoved)) return false;
-            if (color == PieceColor.Black && (rook != 'r' || rookHasMoved)) return false;
+            if (color == PieceColor.White && rook != 'R') return false;
+            if (color == PieceColor.Black && rook != 'r') return false;
 
+            // Check if squares between king and rook are empty and not under attack
             for (int y = fromY + 1; y < rookY; y++) {
-                if (boardUtils.getPiece(fromX, y) != ' ' || threatAnalyzer.isKingInCheck(color,new int[]{fromX,y})) return false;
+                if (boardUtils.getPiece(gameState.getBoard(), fromX, y) != ' ' || threatAnalyzer.isSquareAttackedBy(new int[]{fromX, y}, boardUtils.oppositeColor(color), gameState))
+                    return false;
             }
-            String fromPos = boardUtils.toChessNotation(fromX,rookY);
-            String toPos = boardUtils.toChessNotation(fromX,rookY - 2);
-            Move moveRook = new Move(fromPos,toPos, PieceType.ROOK,color);
-            boardUtils.makeMove(moveRook);
+            
             return true;
         }
 
-        if (toY < fromY) {
+        if (toY < fromY) { // Queenside castling
             int rookY = 0;
-            char rook = boardUtils.getPiece(fromX, rookY);
-            boolean rookHasMoved = rookValidator.hasRookMoved(fromX, rookY);
+            char rook = boardUtils.getPiece(gameState.getBoard(), fromX, rookY);
 
-            if (color == PieceColor.White && (rook != 'R' || rookHasMoved)) return false;
-            if (color == PieceColor.Black && (rook != 'r' || rookHasMoved)) return false;
+            boolean rookHasMoved = (color == PieceColor.White) ? gameState.isWhiteQueenRookMoved() : gameState.isBlackQueenRookMoved();
+            if (rookHasMoved) return false;
 
+            if (color == PieceColor.White && rook != 'R') return false;
+            if (color == PieceColor.Black && rook != 'r') return false;
+
+            // Check if squares between king and rook are empty and not under attack
             for (int y = rookY + 1; y < fromY; y++) {
-                if (boardUtils.getPiece(fromX, y) != ' ' || threatAnalyzer.isKingInCheck(color,new int[]{fromX,y})) return false;
+                if (boardUtils.getPiece(gameState.getBoard(), fromX, y) != ' ' || threatAnalyzer.isSquareAttackedBy(new int[]{fromX, y}, boardUtils.oppositeColor(color), gameState))
+                    return false;
             }
-
-            String fromPos = boardUtils.toChessNotation(fromX,rookY);
-            String toPos = boardUtils.toChessNotation(fromX,rookY + 2);
-            Move moveRook = new Move(fromPos,toPos, PieceType.ROOK,color);
-            boardUtils.makeMove(moveRook);
+            
             return true;
         }
 
         return false;
     }
-
 }
